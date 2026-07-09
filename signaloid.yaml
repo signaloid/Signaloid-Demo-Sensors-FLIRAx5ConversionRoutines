@@ -5,5 +5,16 @@ MinimumCore:
 
 TraceVariables:
     - File: "main.c"
-      LineNumber: 164
-      Expression: "outputDistributions[0]"
+
+      LineNumber: 62
+
+      Expression: "outputVariables[0:0]"
+
+BenchmarkingVariables:
+    - VariableName: outputVariables[0]
+      VariableDescription: Calibrated FLIR Ax5 sensor output in Kelvin.
+      OutputObject: Distribution
+      CommandLineArguments: -S 0
+
+BenchmarkingAllOutputs:
+    - CommandLineArguments: -S 1
