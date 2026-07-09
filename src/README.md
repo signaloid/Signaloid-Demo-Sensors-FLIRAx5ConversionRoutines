@@ -39,10 +39,10 @@ building the C/C++ demo application.
 
 ## On MacOS (with MacPorts)
 ```
-gcc -O3 -I. -I/opt/local/include main.c utilities.c common.c uxhw.c -L/opt/local/lib -lgsl -lgslcblas
+gcc -O3 -I. -I/opt/local/include main.c kernel.c utilities.c common.c uxhw.c -L/opt/local/lib -lgsl -lgslcblas
 ```
 
 ## On Linux
 ```
-gcc -O3 -I. -I/opt/local/include main.c utilities.c common.c uxhw.c -L/opt/local/lib -lgsl -lgslcblas -lm
+gcc -O3 -I. -I/opt/local/include main.c kernel.c utilities.c common.c uxhw.c -L/opt/local/lib -lgsl -lgslcblas -lm
 ```
