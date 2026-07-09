@@ -1,5 +1,5 @@
 /*
- *	Copyright (c) 2024, Signaloid.
+ *	Copyright (c) 2026, Signaloid.
  *
  *	Permission is hereby granted, free of charge, to any person obtaining a copy
  *	of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +27,7 @@
 #include <uxhw.h>
 #include "common.h"
 #include "utilities.h"
+#include "kernel.h"
 
 void
 printUsage(void)
@@ -41,19 +42,22 @@ printUsage(void)
 		"\t[-T, --time] (Timing mode: Times and prints the timing of the kernel execution.)\n"
 		"\t[-b, --benchmarking] (Benchmarking mode: Generate outputs in format for benchmarking.)\n"
 		"\t[-j, --json] (Print output in JSON format.)\n"
-		"\t[-h, --help] (Display this help message.)\n");
+		"\t[-h, --help] (Display this help message.)\n"
+	);
 	/*
 	 *	Print demo specific options usage
 	 */
-	fprintf(stderr,
-		"\t[-sp, --sensor-parameter <particle value used to override default distribution for `counts`: double>]\n");
+	fprintf(
+		stderr,
+		"\t[-sp, --sensor-parameter <particle value used to override default distribution for `counts`: double>]\n"
+	);
 	fprintf(stderr, "\n");
 
 	return;
 }
 
 static void
-setDefaultCommandLineArguments(CommandLineArguments *  arguments)
+setDefaultCommandLineArguments(CommandLineArguments * arguments)
 {
 	/*
 	 *	Older GCC versions have a bug which gives a spurious warning for the C universal zero
@@ -68,7 +72,7 @@ setDefaultCommandLineArguments(CommandLineArguments *  arguments)
 #pragma GCC diagnostic ignored "-Wmissing-braces"
 	*arguments = (CommandLineArguments)
 	{
-		.common	= (CommonCommandLineArguments) {0},
+		.common = (CommonCommandLineArguments) { 0 },
 	};
 #pragma GCC diagnostic pop
 
@@ -82,17 +86,16 @@ setDefaultCommandLineArguments(CommandLineArguments *  arguments)
 
 CommonConstantReturnType
 getCommandLineArguments(
-	int			argc,
-	char *			argv[],
-	CommandLineArguments *	arguments)
+	int                     argc,
+	char *                  argv[],
+	CommandLineArguments *  arguments)
 {
-	const char *		sensorParameterArg = NULL;
-	bool			sensorParameterArgFound = false;
-	DemoOption		options[] =
-				{
-					{ .opt = "sp", .optAlternative = "sensor-parameter", .hasArg = true, .foundArg = &sensorParameterArg, .foundOpt = &sensorParameterArgFound },
-					{0},
-				};
+	const char *    sensorParameterArg      = NULL;
+	bool            sensorParameterArgFound = false;
+	DemoOption      options[]               = {
+		{ .opt = "sp", .optAlternative = "sensor-parameter", .hasArg = true, .foundArg = &sensorParameterArg, .foundOpt = &sensorParameterArgFound },
+		{ 0 },
+	};
 
 	if (arguments == NULL)
 	{
@@ -155,24 +158,25 @@ getCommandLineArguments(
 	 */
 	if (!arguments->common.isOutputSelected)
 	{
-		arguments->common.outputSelect = kOutputDistributionIndexCalibratedSensorOutput;
+		arguments->common.outputSelect = kFLIRAx5OutputVariableIndexCalibratedSensorOutput;
 	}
 
 	/*
 	 *	If a single output is selected, we must be in benchmarking mode or Monte Carlo mode.
 	 */
-	if (arguments->common.outputSelect > kOutputDistributionIndexMax)
+	if (arguments->common.outputSelect > kFLIRAx5OutputVariableIndexMax)
 	{
 		fprintf(
 			stderr,
 			"Output select value (-S option) is greater than the possible number of outputs: Provided %zd. Max: %d\n",
 			arguments->common.outputSelect,
-			kOutputDistributionIndexMax);
+			kFLIRAx5OutputVariableIndexMax
+		);
 	}
 	/*
 	 *	When all outputs are selected, we cannot be in benchmarking mode or Monte Carlo mode.
 	 */
-	else if (arguments->common.outputSelect == kOutputDistributionIndexMax)
+	else if (arguments->common.outputSelect == kFLIRAx5OutputVariableIndexMax)
 	{
 		if ((arguments->common.isBenchmarkingMode) || (arguments->common.isMonteCarloMode))
 		{
@@ -187,7 +191,7 @@ getCommandLineArguments(
 	 */
 	if (sensorParameterArgFound)
 	{
-		CommonConstantReturnType	ret = parseDoubleChecked(sensorParameterArg, &arguments->countValueReadFromArgvToOverrideDefaultDistribution);
+		CommonConstantReturnType ret = parseDoubleChecked(sensorParameterArg, &arguments->countValueReadFromArgvToOverrideDefaultDistribution);
 
 		if (ret != kCommonConstantReturnTypeSuccess)
 		{
@@ -200,92 +204,4 @@ getCommandLineArguments(
 	}
 
 	return kCommonConstantReturnTypeSuccess;
-}
-
-void
-printCalibratedValueAndProbabilities(double calibratedSensorOutput, const char *  variableDescription, const char *  unitsOfMeasurement)
-{
-	/*
-	 *	Note: the calculations of the quantities involving UxHwDoubleProbabilityGT()
-	 *	are purposefully written so as to be self-explanatory and easily checkable,
-	 *	not for efficiency or "cleverness". Also, beware the "percent greater than"
-	 *	and "percent less than" are tricky for larger versus smaller so don't jump
-	 *	to conclusions when you read the code.
-	 */
-	printf("%s: %.2lf %s.\n", variableDescription, calibratedSensorOutput, unitsOfMeasurement);
-	printf("\n");
-	printf(
-		"\tProbability that calibrated sensor output is   1%% or more smaller than %.2"SignaloidParticleModifier"lf %s, is %.6"SignaloidParticleModifier"lf\n",
-		calibratedSensorOutput,
-		unitsOfMeasurement,
-		1 - UxHwDoubleProbabilityGT(calibratedSensorOutput, calibratedSensorOutput * (1 - 0.01)));
-	printf(
-		"\tProbability that calibrated sensor output is   2%% or more smaller than %.2"SignaloidParticleModifier"lf %s, is %.6"SignaloidParticleModifier"lf\n",
-		calibratedSensorOutput,
-		unitsOfMeasurement,
-		1 - UxHwDoubleProbabilityGT(calibratedSensorOutput, calibratedSensorOutput * (1 - 0.02)));
-	printf(
-		"\tProbability that calibrated sensor output is   5%% or more smaller than %.2"SignaloidParticleModifier"lf %s, is %.6"SignaloidParticleModifier"lf\n",
-		calibratedSensorOutput,
-		unitsOfMeasurement,
-		1 - UxHwDoubleProbabilityGT(calibratedSensorOutput, calibratedSensorOutput * (1 - 0.05)));
-	printf("\n");
-	printf(
-		"\tProbability that calibrated sensor output is   1%% or more greater than %.2"SignaloidParticleModifier"lf %s, is %.6"SignaloidParticleModifier"lf\n",
-		calibratedSensorOutput,
-		unitsOfMeasurement,
-		UxHwDoubleProbabilityGT(calibratedSensorOutput, 1.01 * calibratedSensorOutput));
-	printf(
-		"\tProbability that calibrated sensor output is   2%% or more greater than %.2"SignaloidParticleModifier"lf %s, is %.6"SignaloidParticleModifier"lf\n",
-		calibratedSensorOutput,
-		unitsOfMeasurement,
-		UxHwDoubleProbabilityGT(calibratedSensorOutput, 1.02 * calibratedSensorOutput));
-	printf(
-		"\tProbability that calibrated sensor output is   5%% or more greater than %.2"SignaloidParticleModifier"lf %s, is %.6"SignaloidParticleModifier"lf\n",
-		calibratedSensorOutput,
-		unitsOfMeasurement,
-		UxHwDoubleProbabilityGT(calibratedSensorOutput, 1.05 * calibratedSensorOutput));
-
-	return;
-}
-
-void
-printJSONFormattedOutput(
-	CommandLineArguments *	arguments,
-	double *		outputVariable,
-	double *		monteCarloOutputSamples,
-	const char *		variableDescription)
-{
-	/*
-	 *	If in Monte Carlo mode, `pointerToOutputVariable` points to the beginning
-	 *	of the `monteCarloOutputSamples` array. In this case, `arguments.common.numberOfMonteCarloIterations`
-	 *	is the length of the `monteCarloOutputSamples` array. If not in Monte Carlo mode,
-	 *	`pointerToOutputVariable` points to the `outputVariable` to be used.
-	 */
-	double *	pointerToOutputVariable = (arguments->common.isMonteCarloMode) ? monteCarloOutputSamples : outputVariable;
-	/*
-	 *	Print json formatted output.
-	 */
-	JSONVariable variables[] =
-	{
-		{
-			.variableSymbol = "calibratedSensorOutput",
-			.variableDescription = "",
-			.values = (JSONVariablePointer){ .asDouble = pointerToOutputVariable },
-			.type = kJSONVariableTypeDouble,
-			.size = arguments->common.numberOfMonteCarloIterations
-		},
-	};
-
-	strncpy(
-		variables[kOutputDistributionIndexCalibratedSensorOutput].variableDescription,
-		variableDescription,
-		kCommonConstantMaxCharsPerJSONVariableDescription);
-
-	printJSONVariables(
-		variables,
-		kOutputDistributionIndexMax,
-		"Lepton FLIR Sensor Calibration");
-
-	return;
 }
