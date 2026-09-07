@@ -1,5 +1,5 @@
-[<img src="https://assets.signaloid.io/add-to-signaloid-cloud-logo-dark-latest.png#gh-dark-mode-only" alt="[Add to signaloid.io]" height="30">](https://signaloid.io/repositories?connect=https://github.com/signaloid/Signaloid-Demo-Sensors-FLIRtemperatureConversionRoutines#gh-dark-mode-only)
-[<img src="https://assets.signaloid.io/add-to-signaloid-cloud-logo-light-latest.png#gh-light-mode-only" alt="[Add to signaloid.io]" height="30">](https://signaloid.io/repositories?connect=https://github.com/signaloid/Signaloid-Demo-Sensors-FLIRtemperatureConversionRoutines#gh-light-mode-only)
+[<img src="https://assets.signaloid.io/add-to-signaloid-cloud-logo-dark-latest.png#gh-dark-mode-only" alt="[Add to signaloid.io]" height="30">](https://signaloid.io/repositories?connect=https://github.com/signaloid/Signaloid-Demo-Sensors-FLIRAx5ConversionRoutines#gh-dark-mode-only)
+[<img src="https://assets.signaloid.io/add-to-signaloid-cloud-logo-light-latest.png#gh-light-mode-only" alt="[Add to signaloid.io]" height="30">](https://signaloid.io/repositories?connect=https://github.com/signaloid/Signaloid-Demo-Sensors-FLIRAx5ConversionRoutines#gh-light-mode-only)
 
 # FLIR Ax5 Thermal Camera Use Case
 Example demonstrating real-time output uncertainty estimation for calibrated ADC values from the an FLIR Ax5 thermal camera[^1].
@@ -7,7 +7,7 @@ Example demonstrating real-time output uncertainty estimation for calibrated ADC
 ## Cloning the Repository 
 The correct way to clone this repository is:
 ```
-git clone --recursive https://github.com/signaloid/Signaloid-Demo-Sensors-FLIRtemperatureConversionRoutines.git
+git clone --recursive https://github.com/signaloid/Signaloid-Demo-Sensors-FLIRAx5ConversionRoutines.git
 ```
 To update all submodules
 ```
@@ -28,15 +28,15 @@ without enabling end-users of the equipment to estimate how uncertainty in
 the calibration parameters or in the raw radiometric measurements lead to
 uncertainty in the measured temperature. The thermal camera manufacturer
 FLIR provides public documentation of the mathematical operations they
-perform on the raw radiometric data to convert them to temperatures;
-their cameras also provide access to the raw radiometric data as well as the
+perform on the raw radiometric data to convert them to temperatures.
+Their cameras also provide access to the raw radiometric data as well as the
 necessary complementary calibration parameters. This example implements the
 radiometric-to-temperature conversion as detailed by FLIR, using calibration
 parameters for an FLIR Ax5 camera.
 
 The example uses the implied uncertainty given by the number of significant
 digits in the calibration values provided by FLIR to set the default calibration
-parameter uncertainty. The example defines these ranges in `utilities-config.h`(src/utilities-config.h).
+parameter uncertainty. The example defines these ranges in `kernel.h`(src/kernel.h).
 
 The original Python code from [FLIR](https://flir.custhelp.com/app/answers/detail/a_id/3321/~/flir-cameras---temperature-measurement-formula):
 ```python
@@ -109,20 +109,37 @@ next line contains a floating-point value corresponding to an output sample valu
 Please note, that for the Monte Carlo output mode, you need to select a single output
 to calculate, using (`-S`) command-line option.
 
+### Prerequisites
+
+The native build needs GNU Make, a C compiler, and the GNU Scientific Library (GSL).
+
+On macOS, install the Xcode Command Line Tools (which provide `make` and the C
+compiler) and then install GSL with [Homebrew](https://brew.sh):
+```bash
+xcode-select --install
+brew install gsl
+```
+
+On Linux (Debian/Ubuntu):
+```bash
+sudo apt-get install -y build-essential libgsl-dev
+```
+
+The top-level `Makefile` detects the GSL install location automatically, covering
+Homebrew on Apple Silicon (`/opt/homebrew`), Homebrew on Intel (`/usr/local`) and
+MacPorts (`/opt/local`), so no further configuration is needed on macOS.
+
 In order to compile and run this application in the native Monte Carlo mode:
 
-0. Install dependencies (e.g., on Linux):
+1. Compile natively, from the repository root:
 ```
-sudo apt-get install libgsl-dev libgslcblas0
+make local-build
 ```
-1. Compile natively (e.g., on Linux):
-```
-cd src/
-gcc -O3 -I. -I/opt/local/include main.c kernel.c utilities.c common.c uxhw.c -L/opt/local/lib -o native-exe -lgsl -lgslcblas -lm
-```
+This builds the `demo-native-mc` executable at the repository root.
+
 2. Run the application in the MonteCarlo mode, using (`-M`) command-line option:
 ```
-./native-exe -M 10000
+./demo-native-mc -M 10000
 ```
 The above program runs 10000 Monte Carlo iterations.
 
@@ -136,7 +153,7 @@ You can modify the value of the distribution used for the sensor measurement,
 using the `-sp` command line option. The default value used is a
 (`UniformDist(30000, 30100)`).
 Uncertainty is also inserted, by default, for the sensor calibration parameters of the Ax5 camera, the external optics parameters, in the atmosperic atenuation and in the reflected energy.
-All values for the uncertain and non-uncertain parameters are defined in `utilities-config.h`(src/utilities-config.h).
+All values for the uncertain and non-uncertain parameters are defined in `kernel.h`(src/kernel.h).
 
 
 ## Outputs

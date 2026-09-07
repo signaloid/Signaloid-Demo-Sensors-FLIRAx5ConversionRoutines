@@ -3,6 +3,21 @@
 ## main.c
 Implementation of the calculation of the calibrated sensor output for the FLIR sensor.
 
+## kernel.c/h
+Contains the calibration constants for the FLIR Ax5 conversion routine, the input/output
+variable index enums, and the computational kernel (`FLIRAx5_calculateOutput`) that
+implements the conversion formula. Dispatches to the UxHw-mode kernel
+(`flir-ax5-uxhw.c/h`) or the Monte Carlo-mode kernel (`flir-ax5-monte-carlo.c/h`)
+depending on the execution backend.
+
+## flir-ax5-uxhw.c/h
+UxHw-mode calculation kernel: performs a single distributional evaluation of the FLIR
+Ax5 conversion routine via the UxHw API.
+
+## flir-ax5-monte-carlo.c/h
+Monte Carlo-mode calculation kernel: runs `numberOfMonteCarloIterations` independent
+evaluations of the FLIR Ax5 conversion routine, used by the native Monte Carlo build.
+
 ## utilities.c/h
 These contain utility methods for parsing, setting, and reporting
 the usage of demo-specific command-line arguments of C/C++ demo applications.
@@ -28,21 +43,12 @@ These source files are symlinks to the original files and are contained in the r
 [Signaloid-Demo-UxHwCompatibilityForNativeExecution](https://github.com/signaloid/Signaloid-Demo-UxHwCompatibilityForNativeExecution)
 which is included as a submodule in `submodules/compat`.
 
-## utilities-config.h
-Configuration constants and demo-specific definitions.
-
 ## config.mk
 Signaloid cores use this file to identify the source codes they will use when
 building the C/C++ demo application.
 
 # To Build Natively on Non-Signaloid Platforms
 
-## On MacOS (with MacPorts)
-```
-gcc -O3 -I. -I/opt/local/include main.c kernel.c utilities.c common.c uxhw.c -L/opt/local/lib -lgsl -lgslcblas
-```
-
-## On Linux
-```
-gcc -O3 -I. -I/opt/local/include main.c kernel.c utilities.c common.c uxhw.c -L/opt/local/lib -lgsl -lgslcblas -lm
-```
+Run `make local-build` from the repository root. This builds the
+`demo-native-mc` executable at the repository root. See the top-level `README.md`'s
+"Prerequisites" section for installing the required build dependencies.
