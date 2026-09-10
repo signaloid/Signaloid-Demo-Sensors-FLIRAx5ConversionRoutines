@@ -1,5 +1,5 @@
 /*
- *	Copyright (c) 2026, Signaloid.
+ *	Copyright (c) 2024-2026, Signaloid.
  *
  *	Permission is hereby granted, free of charge, to any person obtaining a copy
  *	of this software and associated documentation files (the "Software"), to deal
@@ -23,10 +23,12 @@
 #include <math.h>
 #include <uxhw.h>
 #include "kernel.h"
+#include "flir-ax5-uxhw.h"
+#include "flir-ax5-monte-carlo.h"
 
 
 double
-FLIRAx5_calculateOutput(double countValueReadFromArgvToOverrideDefaultDistribution, double *  inputVariables, double *  outputVariables)
+FLIRAx5_calculateOutput(double countValueToOverrideDefaultDistribution, double *  inputVariables, double *  outputVariables)
 {
 	/*
 	 *	These parameter names purposefully mimic the names used in the
@@ -42,13 +44,13 @@ FLIRAx5_calculateOutput(double countValueReadFromArgvToOverrideDefaultDistributi
 	double  calibratedValue;
 	double  counts;
 
-	if (isnan(countValueReadFromArgvToOverrideDefaultDistribution))
+	if (isnan(countValueToOverrideDefaultDistribution))
 	{
 		counts = inputVariables[kFLIRAx5InputVariableIndexSensorCounts];
 	}
 	else
 	{
-		counts = countValueReadFromArgvToOverrideDefaultDistribution;
+		counts = countValueToOverrideDefaultDistribution;
 	}
 
 	K1 = 1 /
@@ -117,4 +119,49 @@ FLIRAx5_calculateOutput(double countValueReadFromArgvToOverrideDefaultDistributi
 	outputVariables[kFLIRAx5OutputVariableIndexCalibratedSensorOutput] = calibratedValue;
 
 	return calibratedValue;
+}
+
+void
+FLIRAx5SetInputVariablesViaUxHwCall(double * inputVariables)
+{
+	inputVariables[kFLIRAx5InputVariableIndexSensorCounts] = UxHwDoubleUniformDist(
+		kDefaultInputVariableIndexSensorCountsDistLow,
+		kDefaultInputVariableIndexSensorCountsDistHigh
+	);
+
+	return;
+}
+
+double
+FLIRAx5CalculateOutputUxHw(
+	double      countValueToOverrideDefaultDistribution,
+	double *    outputVariables,
+	double *    monteCarloOutputSamples)
+{
+	double inputVariables[kFLIRAx5InputVariableIndexMax];
+
+	return FLIRAx5UxHw(
+		countValueToOverrideDefaultDistribution,
+		inputVariables,
+		outputVariables,
+		monteCarloOutputSamples
+	);
+}
+
+double
+FLIRAx5CalculateOutputMonteCarlo(
+	size_t      numberOfMonteCarloIterations,
+	double      countValueToOverrideDefaultDistribution,
+	double *    outputVariables,
+	double *    monteCarloOutputSamples)
+{
+	double inputVariables[kFLIRAx5InputVariableIndexMax];
+
+	return FLIRAx5MonteCarlo(
+		numberOfMonteCarloIterations,
+		countValueToOverrideDefaultDistribution,
+		inputVariables,
+		outputVariables,
+		monteCarloOutputSamples
+	);
 }
