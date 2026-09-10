@@ -89,7 +89,7 @@ main(int argc, char *  argv[])
 
 	/*
 	 *	Dispatch to the mode-specific kernel. The Monte Carlo loop lives
-	 *	inside `FLIRAx5CalculateOutputMonteCarlo`; UxHw mode runs a single
+	 *	inside `FLIRAx5CalculateOutputMonteCarlo` while UxHw mode runs a single
 	 *	distributional evaluation inside `FLIRAx5CalculateOutputUxHw`. Both
 	 *	take the fields they need as scalars, so this is the only place that
 	 *	unpacks `CommandLineArguments` for the kernel.
