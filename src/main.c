@@ -45,10 +45,10 @@ main(int argc, char *  argv[])
 
 	double                      calibratedSensorOutput;
 	double *                    monteCarloOutputSamples = NULL;
-	clock_t                     start;
+	clock_t                     start = 0;
 	clock_t                     end;
 	double                      cpuTimeUsedSeconds;
-	double                      outputVariables[kFLIRAx5OutputVariableIndexMax];
+	double                      outputVariables[kFLIRAx5OutputVariableIndexMax] = { 0 };
 	const char *                outputVariableNames[kFLIRAx5OutputVariableIndexMax] = {
 		"Calibrated FLIR Ax5 Temperature Output"
 	};
@@ -79,6 +79,8 @@ main(int argc, char *  argv[])
 		__LINE__
 	);
 
+	const bool isScalarOutputSelected = isSelectedOutputScalar(&arguments.common, outputVariableTypes, kFLIRAx5OutputVariableIndexMax);
+
 	/*
 	 *	Start timing.
 	 */
@@ -89,16 +91,14 @@ main(int argc, char *  argv[])
 
 	/*
 	 *	Dispatch to the mode-specific kernel. The Monte Carlo loop lives
-	 *	inside `FLIRAx5CalculateOutputMonteCarlo` while UxHw mode runs a single
-	 *	distributional evaluation inside `FLIRAx5CalculateOutputUxHw`. Both
-	 *	take the fields they need as scalars, so this is the only place that
-	 *	unpacks `CommandLineArguments` for the kernel.
+	 *	inside `FLIRAx5CalculateOutputMonteCarlo`; UxHw mode runs a single
+	 *	distributional evaluation inside `FLIRAx5CalculateOutputUxHw`.
 	 */
 	if (arguments.common.isMonteCarloMode)
 	{
 		calibratedSensorOutput = FLIRAx5CalculateOutputMonteCarlo(
+			&arguments.kernelParameters,
 			arguments.common.numberOfMonteCarloIterations,
-			arguments.countValueReadFromArgvToOverrideDefaultDistribution,
 			outputVariables,
 			monteCarloOutputSamples
 		);
@@ -107,13 +107,16 @@ main(int argc, char *  argv[])
 		 *	If not doing UxHw version, then approximate the cost of the third phase of
 		 *	Monte Carlo (post-processing), by calculating the mean and variance.
 		 */
-		meanAndVariance         = calculateMeanAndVarianceOfDoubleSamples(monteCarloOutputSamples, arguments.common.numberOfMonteCarloIterations);
-		calibratedSensorOutput  = meanAndVariance.mean;
+		if (!isScalarOutputSelected)
+		{
+			meanAndVariance         = calculateMeanAndVarianceOfDoubleSamples(monteCarloOutputSamples, arguments.common.numberOfMonteCarloIterations);
+			calibratedSensorOutput  = meanAndVariance.mean;
+		}
 	}
 	else
 	{
 		calibratedSensorOutput = FLIRAx5CalculateOutputUxHw(
-			arguments.countValueReadFromArgvToOverrideDefaultDistribution,
+			&arguments.kernelParameters,
 			outputVariables,
 			monteCarloOutputSamples
 		);
@@ -139,7 +142,8 @@ main(int argc, char *  argv[])
 			outputVariables,
 			outputVariableNames,
 			kFLIRAx5OutputVariableIndexMax,
-			applicationDescription
+			applicationDescription,
+			outputVariableTypes
 		);
 	}
 	else
@@ -150,7 +154,8 @@ main(int argc, char *  argv[])
 			outputVariables,
 			outputVariableNames,
 			outputVariableDescriptions,
-			monteCarloOutputSamples
+			monteCarloOutputSamples,
+			outputVariableTypes
 		);
 	}
 
@@ -185,7 +190,7 @@ main(int argc, char *  argv[])
 	{
 		saveMonteCarloDoubleDataToDataDotOutFile(
 			monteCarloOutputSamples, (uint64_t) (cpuTimeUsedSeconds * 1000000),
-			arguments.common.numberOfMonteCarloIterations
+			isScalarOutputSelected ? 1 : arguments.common.numberOfMonteCarloIterations
 		);
 	}
 
@@ -197,16 +202,11 @@ main(int argc, char *  argv[])
 	free(monteCarloOutputSamples);
 
 	/*
-	 *	`calibratedSensorOutput` and `outputVariableTypes` are not read
-	 *	past this point: `calibratedSensorOutput`'s only purpose in Monte
-	 *	Carlo mode is to approximate the cost of the mean/variance
-	 *	post-processing phase (see above), and `outputVariableTypes` is
-	 *	kept for structural consistency with other demos even though this
-	 *	sensor has a single, always-distributional output with no scalar
-	 *	output-select handling to drive.
+	 *	`calibratedSensorOutput` is not read past this point: its only
+	 *	purpose in Monte Carlo mode is to approximate the cost of the
+	 *	mean/variance post-processing phase (see above).
 	 */
 	(void) calibratedSensorOutput;
-	(void) outputVariableTypes;
 
 #ifdef NO_OS_AVAILABLE
 	returnZeroNoOS();

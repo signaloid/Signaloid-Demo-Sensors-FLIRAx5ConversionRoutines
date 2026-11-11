@@ -23,11 +23,12 @@
 #pragma once
 
 #include "common.h"
+#include "kernel.h"
 
 typedef struct
 {
 	CommonCommandLineArguments  common;
-	double                      countValueReadFromArgvToOverrideDefaultDistribution;
+	FLIRAx5KernelParameters            kernelParameters;
 } CommandLineArguments;
 
 /**

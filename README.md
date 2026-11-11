@@ -2,7 +2,7 @@
 [<img src="https://assets.signaloid.io/add-to-signaloid-cloud-logo-light-latest.png#gh-light-mode-only" alt="[Add to signaloid.io]" height="30">](https://signaloid.io/repositories?connect=https://github.com/signaloid/Signaloid-Demo-Sensors-FLIRAx5ConversionRoutines#gh-light-mode-only)
 
 # FLIR Ax5 Thermal Camera Use Case
-Example demonstrating real-time output uncertainty estimation for calibrated ADC values from the an FLIR Ax5 thermal camera[^1].
+Example demonstrating real-time estimation of output distributions for calibrated ADC values from an FLIR Ax5 thermal camera[^1].
 
 ## Cloning the Repository 
 The correct way to clone this repository is:
@@ -23,10 +23,10 @@ git submodule update --init --recursive
 Thermal cameras such as microbolometer arrays measure emitted electromagnetic
 radiation and convert this to temperature based on a combination of the
 underlying physical principles and calibration parameters for a particular
-camera. Many thermal imaging cameras perform this conversion internally,
-without enabling end-users of the equipment to estimate how uncertainty in
-the calibration parameters or in the raw radiometric measurements lead to
-uncertainty in the measured temperature. The thermal camera manufacturer
+camera. Thermal imaging cameras typically perform this conversion internally,
+without enabling end-users of the equipment to estimate how distributions over
+the calibration parameters or the raw radiometric measurements lead to
+a distribution over the measured temperature. The thermal camera manufacturer
 FLIR provides public documentation of the mathematical operations they
 perform on the raw radiometric data to convert them to temperatures.
 Their cameras also provide access to the raw radiometric data as well as the
@@ -34,9 +34,9 @@ necessary complementary calibration parameters. This example implements the
 radiometric-to-temperature conversion as detailed by FLIR, using calibration
 parameters for an FLIR Ax5 camera.
 
-The example uses the implied uncertainty given by the number of significant
+The example uses the implied precision given by the number of significant
 digits in the calibration values provided by FLIR to set the default calibration
-parameter uncertainty. The example defines these ranges in `kernel.h`(src/kernel.h).
+parameter distributions. The example defines these ranges in `kernel.h`(src/kernel.h).
 
 The original Python code from [FLIR](https://flir.custhelp.com/app/answers/detail/a_id/3321/~/flir-cameras---temperature-measurement-formula):
 ```python
@@ -152,8 +152,8 @@ cat data.out
 You can modify the value of the distribution used for the sensor measurement,
 using the `-sp` command line option. The default value used is a
 (`UniformDist(30000, 30100)`).
-Uncertainty is also inserted, by default, for the sensor calibration parameters of the Ax5 camera, the external optics parameters, in the atmosperic atenuation and in the reflected energy.
-All values for the uncertain and non-uncertain parameters are defined in `kernel.h`(src/kernel.h).
+Distributions are also used, by default, for the sensor calibration parameters of the Ax5 camera, the external optics parameters, the atmospheric attenuation and the reflected energy.
+All values for the distribution and fixed parameters are defined in `kernel.h`(src/kernel.h).
 
 
 ## Outputs
@@ -173,7 +173,6 @@ Usage: Valid command-line arguments are:
         [-S, --select-output <output : int>] (Compute 0-indexed output, by default 0.)
         [-M, --multiple-executions <Number of executions : int (Default: 1)>] (Repeated execute kernel for benchmarking.)
         [-T, --time] (Timing mode: Times and prints the timing of the kernel execution.)
-        [-b, --benchmarking] (Benchmarking mode: Generate outputs in format for benchmarking.)
         [-j, --json] (Print output in JSON format.)
         [-h, --help] (Display this help message.)
         [-sp, --sensor-parameter <particle value used to override default distribution for `counts`: double>]

@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include "kernel.h"
+
 /**
  *	@brief	UxHw-mode calculation kernel. Performs a single distributional
  *		evaluation of the FLIR Ax5 conversion routine: samples the
@@ -30,13 +32,13 @@
  *		`FLIRAx5_calculateOutput` once. Writes the result to
  *		`outputVariables[0]` and to `monteCarloOutputSamples[0]`.
  *
- *		Purely computational: no dispatch-layer struct parameter and no
+ *		Purely computational: no `CommandLineArguments` parameter and no
  *		config macro reads. The caller (`FLIRAx5CalculateOutputUxHw` in
  *		`kernel.c`) sizes `inputVariables`.
  *
- *	@param	countValueToOverrideDefaultDistribution	: Scalar
- *			override for the sensor counts input, or `NaN` to use
- *			the sampled value in `inputVariables` instead.
+ *	@param	parameters		: Kernel parameters. If the sensor counts
+ *			input is set from the command line, that value is used
+ *			instead of the sampled value in `inputVariables`.
  *	@param	inputVariables		: Array to fill via
  *			`FLIRAx5SetInputVariablesViaUxHwCall`, sized by the caller.
  *	@param	outputVariables		: Array to fill with per-output results.
@@ -45,7 +47,7 @@
  */
 double
 FLIRAx5UxHw(
-	double      countValueToOverrideDefaultDistribution,
-	double *    inputVariables,
-	double *    outputVariables,
-	double *    monteCarloOutputSamples);
+	const FLIRAx5KernelParameters *    parameters,
+	double *                    inputVariables,
+	double *                    outputVariables,
+	double *                    monteCarloOutputSamples);

@@ -23,10 +23,8 @@
 #pragma once
 
 #include <math.h>
+#include <stdbool.h>
 #include <stddef.h>
-
-
-#define kCountValueIndicatingNotSetOverride (NAN)
 
 /*
  *	The conversion is defined to be exactly 273.15 with no uncertainty.
@@ -94,20 +92,38 @@ typedef enum
 } FLIRAx5OutputVariableIndex;
 
 /**
+ *	@brief	Parameters consumed by the kernels. `getCommandLineArguments()`
+ *		populates it from the command-line arguments, so the kernels do
+ *		not depend on the demo's `CommandLineArguments`.
+ */
+typedef struct
+{
+	/*
+	 *	Input values given on the command line. Element `i` is used only if
+	 *	`isInputSetFromCommandLine[i]` is true.
+	 */
+	double inputVariables[kFLIRAx5InputVariableIndexMax];
+	/*
+	 *	Element `i` is true if `inputVariables[i]` overrides the default
+	 *	distribution of input `i`.
+	 */
+	bool isInputSetFromCommandLine[kFLIRAx5InputVariableIndexMax];
+} FLIRAx5KernelParameters;
+
+/**
  *	@brief	Sensor calibration routine. Computes the calibrated temperature output
  *		from raw bolometer counts using the FLIR Ax5 conversion formula.
  *
- *	@param	countValueToOverrideDefaultDistribution	: Scalar
- *					  override for the sensor counts input, or
- *					  `NaN` (`kCountValueIndicatingNotSetOverride`)
- *					  to use the value in `inputVariables` instead.
+ *	@param	parameters	: Kernel parameters. If the sensor counts input is set
+ *				  from the command line, its value there is used instead
+ *				  of the value in `inputVariables`.
  *	@param	inputVariables	: The array of input variables used in the calculation.
  *	@param	outputVariables	: An array of output variables. Writes the result to
- *					  `outputVariables[kOutputVariableIndexCalibratedSensorOutput]`.
- *	@return	double			: Returns the distributional value calculated.
+ *				  `outputVariables[kOutputVariableIndexCalibratedSensorOutput]`.
+ *	@return	double		: Returns the distributional value calculated.
  */
 double
-FLIRAx5_calculateOutput(double countValueToOverrideDefaultDistribution, double *  inputVariables, double *  outputVariables);
+FLIRAx5_calculateOutput(const FLIRAx5KernelParameters * parameters, double *  inputVariables, double *  outputVariables);
 
 /**
  *	@brief	Populate `inputVariables[kFLIRAx5InputVariableIndexSensorCounts]` with a
@@ -135,19 +151,16 @@ FLIRAx5SetInputVariablesViaUxHwCall(double * inputVariables);
  *		computational `FLIRAx5UxHw` (in `flir-ax5-uxhw.c`), which reads no
  *		`kFLIRAx5*` config macros.
  *
- *	@param	countValueToOverrideDefaultDistribution	: Scalar
- *					  override for the sensor counts input, or
- *					  `kCountValueIndicatingNotSetOverride` to use
- *					  the sampled value instead.
+ *	@param	parameters		: Kernel parameters.
  *	@param	outputVariables		: Array of size `kFLIRAx5OutputVariableIndexMax` to fill.
  *	@param	monteCarloOutputSamples	: Single-element array for the distributional result.
  *	@return	double			: Returns the calibrated sensor output.
  */
 double
 FLIRAx5CalculateOutputUxHw(
-	double      countValueToOverrideDefaultDistribution,
-	double *    outputVariables,
-	double *    monteCarloOutputSamples);
+	const FLIRAx5KernelParameters *    parameters,
+	double *                    outputVariables,
+	double *                    monteCarloOutputSamples);
 
 /**
  *	@brief	Monte Carlo calculation kernel. Sizes and owns the
@@ -156,18 +169,15 @@ FLIRAx5CalculateOutputUxHw(
  *		computational `FLIRAx5MonteCarlo` (in `flir-ax5-monte-carlo.c`),
  *		which reads no `kFLIRAx5*` config macros.
  *
+ *	@param	parameters			: Kernel parameters.
  *	@param	numberOfMonteCarloIterations	: Number of Monte Carlo iterations to run.
- *	@param	countValueToOverrideDefaultDistribution	: Scalar
- *					  override for the sensor counts input, or
- *					  `kCountValueIndicatingNotSetOverride` to use
- *					  the per-iteration sampled value instead.
- *	@param	outputVariables		: Array of size `kFLIRAx5OutputVariableIndexMax` to fill.
- *	@param	monteCarloOutputSamples	: Array of `numberOfMonteCarloIterations` doubles, filled with samples.
- *	@return	double			: Returns the calibrated sensor output of the last iteration.
+ *	@param	outputVariables			: Array of size `kFLIRAx5OutputVariableIndexMax` to fill.
+ *	@param	monteCarloOutputSamples		: Array of `numberOfMonteCarloIterations` doubles, filled with samples.
+ *	@return	double				: Returns the calibrated sensor output of the last iteration.
  */
 double
 FLIRAx5CalculateOutputMonteCarlo(
-	size_t      numberOfMonteCarloIterations,
-	double      countValueToOverrideDefaultDistribution,
-	double *    outputVariables,
-	double *    monteCarloOutputSamples);
+	const FLIRAx5KernelParameters *    parameters,
+	size_t                      numberOfMonteCarloIterations,
+	double *                    outputVariables,
+	double *                    monteCarloOutputSamples);

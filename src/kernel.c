@@ -28,7 +28,7 @@
 
 
 double
-FLIRAx5_calculateOutput(double countValueToOverrideDefaultDistribution, double *  inputVariables, double *  outputVariables)
+FLIRAx5_calculateOutput(const FLIRAx5KernelParameters * parameters, double *  inputVariables, double *  outputVariables)
 {
 	/*
 	 *	These parameter names purposefully mimic the names used in the
@@ -44,13 +44,13 @@ FLIRAx5_calculateOutput(double countValueToOverrideDefaultDistribution, double *
 	double  calibratedValue;
 	double  counts;
 
-	if (isnan(countValueToOverrideDefaultDistribution))
+	if (parameters->isInputSetFromCommandLine[kFLIRAx5InputVariableIndexSensorCounts])
 	{
-		counts = inputVariables[kFLIRAx5InputVariableIndexSensorCounts];
+		counts = parameters->inputVariables[kFLIRAx5InputVariableIndexSensorCounts];
 	}
 	else
 	{
-		counts = countValueToOverrideDefaultDistribution;
+		counts = inputVariables[kFLIRAx5InputVariableIndexSensorCounts];
 	}
 
 	K1 = 1 /
@@ -67,7 +67,7 @@ FLIRAx5_calculateOutput(double countValueToOverrideDefaultDistribution, double *
 		 (
 		kFLIRAx5CameraAx5CalibrationParameterR /
 		(
-			pow(M_E, kFLIRAx5CameraAx5CalibrationParameterB / kFLIRAx5ObjectParameterTRefl) -
+			exp(kFLIRAx5CameraAx5CalibrationParameterB / kFLIRAx5ObjectParameterTRefl) -
 			kFLIRAx5CameraAx5CalibrationParameterF
 		)
 	     );
@@ -82,7 +82,7 @@ FLIRAx5_calculateOutput(double countValueToOverrideDefaultDistribution, double *
 		 (
 		kFLIRAx5CameraAx5CalibrationParameterR /
 		(
-			pow(M_E, kFLIRAx5CameraAx5CalibrationParameterB / kFLIRAx5AtmosphericAttenuationParameterTAtm) -
+			exp(kFLIRAx5CameraAx5CalibrationParameterB / kFLIRAx5AtmosphericAttenuationParameterTAtm) -
 			kFLIRAx5CameraAx5CalibrationParameterF
 		)
 	     );
@@ -101,7 +101,7 @@ FLIRAx5_calculateOutput(double countValueToOverrideDefaultDistribution, double *
 		 (
 		kFLIRAx5CameraAx5CalibrationParameterR /
 		(
-			pow(M_E, kFLIRAx5CameraAx5CalibrationParameterB / kFLIRAx5ExternalOpticsParameterTExtOptics) -
+			exp(kFLIRAx5CameraAx5CalibrationParameterB / kFLIRAx5ExternalOpticsParameterTExtOptics) -
 			kFLIRAx5CameraAx5CalibrationParameterF
 		)
 	     );
@@ -134,14 +134,14 @@ FLIRAx5SetInputVariablesViaUxHwCall(double * inputVariables)
 
 double
 FLIRAx5CalculateOutputUxHw(
-	double      countValueToOverrideDefaultDistribution,
-	double *    outputVariables,
-	double *    monteCarloOutputSamples)
+	const FLIRAx5KernelParameters *    parameters,
+	double *                    outputVariables,
+	double *                    monteCarloOutputSamples)
 {
 	double inputVariables[kFLIRAx5InputVariableIndexMax];
 
 	return FLIRAx5UxHw(
-		countValueToOverrideDefaultDistribution,
+		parameters,
 		inputVariables,
 		outputVariables,
 		monteCarloOutputSamples
@@ -150,16 +150,16 @@ FLIRAx5CalculateOutputUxHw(
 
 double
 FLIRAx5CalculateOutputMonteCarlo(
-	size_t      numberOfMonteCarloIterations,
-	double      countValueToOverrideDefaultDistribution,
-	double *    outputVariables,
-	double *    monteCarloOutputSamples)
+	const FLIRAx5KernelParameters *    parameters,
+	size_t                      numberOfMonteCarloIterations,
+	double *                    outputVariables,
+	double *                    monteCarloOutputSamples)
 {
 	double inputVariables[kFLIRAx5InputVariableIndexMax];
 
 	return FLIRAx5MonteCarlo(
+		parameters,
 		numberOfMonteCarloIterations,
-		countValueToOverrideDefaultDistribution,
 		inputVariables,
 		outputVariables,
 		monteCarloOutputSamples

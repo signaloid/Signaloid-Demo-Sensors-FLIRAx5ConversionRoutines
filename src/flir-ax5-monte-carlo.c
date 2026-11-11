@@ -26,11 +26,11 @@
 
 double
 FLIRAx5MonteCarlo(
-	size_t      numberOfMonteCarloIterations,
-	double      countValueToOverrideDefaultDistribution,
-	double *    inputVariables,
-	double *    outputVariables,
-	double *    monteCarloOutputSamples)
+	const FLIRAx5KernelParameters *    parameters,
+	size_t                      numberOfMonteCarloIterations,
+	double *                    inputVariables,
+	double *                    outputVariables,
+	double *                    monteCarloOutputSamples)
 {
 	double calibratedSensorOutput = 0.0;
 
@@ -44,7 +44,7 @@ FLIRAx5MonteCarlo(
 		FLIRAx5SetInputVariablesViaUxHwCall(inputVariables);
 
 		calibratedSensorOutput = FLIRAx5_calculateOutput(
-			countValueToOverrideDefaultDistribution,
+			parameters,
 			inputVariables,
 			outputVariables
 		);
