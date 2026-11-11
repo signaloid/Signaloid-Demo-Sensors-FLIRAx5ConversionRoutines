@@ -40,7 +40,6 @@ printUsage(void)
 		"\t[-S, --select-output <output : int>] (Compute 0-indexed output, by default 0.)\n"
 		"\t[-M, --multiple-executions <Number of executions : int (Default: 1)>] (Repeated execute kernel for benchmarking.)\n"
 		"\t[-T, --time] (Timing mode: Times and prints the timing of the kernel execution.)\n"
-		"\t[-b, --benchmarking] (Benchmarking mode: Generate outputs in format for benchmarking.)\n"
 		"\t[-j, --json] (Print output in JSON format.)\n"
 		"\t[-h, --help] (Display this help message.)\n"
 	);
@@ -72,14 +71,13 @@ setDefaultCommandLineArguments(CommandLineArguments * arguments)
 #pragma GCC diagnostic ignored "-Wmissing-braces"
 	*arguments = (CommandLineArguments)
 	{
-		.common = (CommonCommandLineArguments) { 0 },
+		.common             = (CommonCommandLineArguments) { 0 },
+		.kernelParameters   = (FLIRAx5KernelParameters) {
+			.inputVariables             = { 0 },
+			.isInputSetFromCommandLine  = { false },
+		},
 	};
 #pragma GCC diagnostic pop
-
-	/*
-	 *	Initialize any demo-specific command line arguments to default values
-	 */
-	arguments->countValueReadFromArgvToOverrideDefaultDistribution = kCountValueIndicatingNotSetOverride;
 
 	return;
 }
@@ -103,13 +101,12 @@ setNoOSCommandLineArguments(CommandLineArguments * arguments)
 	 */
 	setDefaultCommandLineArguments(arguments);
 
-	arguments->common.numberOfMonteCarloIterations                  = 1;
-	arguments->common.outputSelect                                  = kFLIRAx5OutputVariableIndexMax;
-	arguments->common.isTimingEnabled                               = false;
-	arguments->common.isMonteCarloMode                              = false;
-	arguments->common.isOutputJSONMode                              = false;
-	arguments->common.isWriteToFileEnabled                          = false;
-	arguments->countValueReadFromArgvToOverrideDefaultDistribution  = kCountValueIndicatingNotSetOverride;
+	arguments->common.numberOfMonteCarloIterations  = 1;
+	arguments->common.outputSelect                  = kFLIRAx5OutputVariableIndexMax;
+	arguments->common.isTimingEnabled               = false;
+	arguments->common.isMonteCarloMode              = false;
+	arguments->common.isOutputJSONMode              = false;
+	arguments->common.isWriteToFileEnabled          = false;
 
 	return kCommonConstantReturnTypeSuccess;
 }
@@ -206,7 +203,7 @@ getCommandLineArguments(
 	}
 
 	/*
-	 *	If a single output is selected, we must be in benchmarking mode or Monte Carlo mode.
+	 *	If a single output is selected, we must be in Monte Carlo mode.
 	 */
 	if (arguments->common.outputSelect > kFLIRAx5OutputVariableIndexMax)
 	{
@@ -220,13 +217,13 @@ getCommandLineArguments(
 		return kCommonConstantReturnTypeError;
 	}
 	/*
-	 *	When all outputs are selected, we cannot be in benchmarking mode or Monte Carlo mode.
+	 *	When all outputs are selected, we cannot be in Monte Carlo mode.
 	 */
 	else if (arguments->common.outputSelect == kFLIRAx5OutputVariableIndexMax)
 	{
-		if ((arguments->common.isBenchmarkingMode) || (arguments->common.isMonteCarloMode))
+		if (arguments->common.isMonteCarloMode)
 		{
-			fprintf(stderr, "Error: Please select a single output when in benchmarking mode or Monte Carlo mode.\n");
+			fprintf(stderr, "Error: Please select a single output when in Monte Carlo mode.\n");
 
 			return kCommonConstantReturnTypeError;
 		}
@@ -237,16 +234,22 @@ getCommandLineArguments(
 	 */
 	if (sensorParameterArgFound)
 	{
-		CommonConstantReturnType ret = parseDoubleChecked(sensorParameterArg, &arguments->countValueReadFromArgvToOverrideDefaultDistribution);
+		double                      sensorCounts;
+		CommonConstantReturnType    ret = parseDoubleChecked(sensorParameterArg, &sensorCounts);
 
 		if (ret != kCommonConstantReturnTypeSuccess)
 		{
-			arguments->countValueReadFromArgvToOverrideDefaultDistribution = NAN;
 			fprintf(stderr, "Error: The countValueReadFromArgvToOverrideDefaultDistribution value must be a real number. Setting it to NAN.\n");
 			printUsage();
 
 			return kCommonConstantReturnTypeError;
 		}
+
+		/*
+		 *	A NaN value leaves the default distribution in place.
+		 */
+		arguments->kernelParameters.inputVariables[kFLIRAx5InputVariableIndexSensorCounts]              = sensorCounts;
+		arguments->kernelParameters.isInputSetFromCommandLine[kFLIRAx5InputVariableIndexSensorCounts]   = !isnan(sensorCounts);
 	}
 
 	return kCommonConstantReturnTypeSuccess;

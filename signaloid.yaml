@@ -1,5 +1,6 @@
 MinimumCore:
-    Microarchitecture: Athens
+    Microarchitecture: Rome
+    DependencyTracking: Basic
     MemorySize: 256000
     Precision: 32
 

@@ -26,10 +26,10 @@
 
 double
 FLIRAx5UxHw(
-	double      countValueToOverrideDefaultDistribution,
-	double *    inputVariables,
-	double *    outputVariables,
-	double *    monteCarloOutputSamples)
+	const FLIRAx5KernelParameters *    parameters,
+	double *                    inputVariables,
+	double *                    outputVariables,
+	double *                    monteCarloOutputSamples)
 {
 	double calibratedSensorOutput;
 
@@ -40,7 +40,7 @@ FLIRAx5UxHw(
 	FLIRAx5SetInputVariablesViaUxHwCall(inputVariables);
 
 	calibratedSensorOutput = FLIRAx5_calculateOutput(
-		countValueToOverrideDefaultDistribution,
+		parameters,
 		inputVariables,
 		outputVariables
 	);

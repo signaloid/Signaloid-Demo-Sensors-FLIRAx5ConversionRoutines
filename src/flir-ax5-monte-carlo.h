@@ -23,6 +23,7 @@
 #pragma once
 
 #include <stddef.h>
+#include "kernel.h"
 
 /**
  *	@brief	Monte Carlo calculation kernel. Runs `numberOfMonteCarloIterations`
@@ -35,14 +36,14 @@
  *		in `kernel.h` and re-sampling them without UxHw calls would be a
  *		semantics change, not a restructure (see the refactor report).
  *
- *		Purely computational: no dispatch-layer struct parameter and no
+ *		Purely computational: no `CommandLineArguments` parameter and no
  *		config macro reads. The caller (`FLIRAx5CalculateOutputMonteCarlo`
  *		in `kernel.c`) sizes `inputVariables`.
  *
+ *	@param	parameters		: Kernel parameters. If the sensor counts
+ *			input is set from the command line, that value is used
+ *			instead of the per-iteration sampled value in `inputVariables`.
  *	@param	numberOfMonteCarloIterations	: Number of Monte Carlo iterations to run.
- *	@param	countValueToOverrideDefaultDistribution	: Scalar
- *			override for the sensor counts input, or `NaN` to use
- *			the per-iteration sampled value in `inputVariables` instead.
  *	@param	inputVariables		: Array re-filled each iteration via
  *			`FLIRAx5SetInputVariablesViaUxHwCall`, sized by the caller.
  *	@param	outputVariables		: Array of output-variable results to fill.
@@ -51,8 +52,8 @@
  */
 double
 FLIRAx5MonteCarlo(
-	size_t      numberOfMonteCarloIterations,
-	double      countValueToOverrideDefaultDistribution,
-	double *    inputVariables,
-	double *    outputVariables,
-	double *    monteCarloOutputSamples);
+	const FLIRAx5KernelParameters *    parameters,
+	size_t                      numberOfMonteCarloIterations,
+	double *                    inputVariables,
+	double *                    outputVariables,
+	double *                    monteCarloOutputSamples);
